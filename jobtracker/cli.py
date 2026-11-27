@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import argparse
 
+from pathlib import Path
+
+from .report import render_html, render_text
 from .tracker import STATUSES, Tracker
 
 
@@ -26,6 +29,9 @@ def build_parser() -> argparse.ArgumentParser:
     rm.add_argument("id", type=int)
 
     sub.add_parser("summary", help="Count applications by status")
+
+    rep = sub.add_parser("report", help="Executive summary with KPIs, risks and actions")
+    rep.add_argument("--html", metavar="FILE", help="Also save an HTML dashboard to FILE")
     return parser
 
 
@@ -52,5 +58,10 @@ def main(argv: list[str] | None = None) -> None:
         elif args.command == "summary":
             for status, count in tracker.summary().items():
                 print(f"{status:<10} {count}")
+        elif args.command == "report":
+            print(render_text(tracker.list()))
+            if args.html:
+                Path(args.html).write_text(render_html(tracker.list()), encoding="utf-8")
+                print(f"\nDashboard saved to {args.html}")
     except (KeyError, ValueError) as err:
         print(f"Error: {err}")

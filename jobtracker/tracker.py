@@ -18,6 +18,11 @@ class Application:
     status: str = "saved"
     date_added: str = field(default_factory=lambda: date.today().isoformat())
     notes: str = ""
+    date_updated: str = ""  # blank in older data files; falls back to date_added
+
+    @property
+    def last_activity(self) -> str:
+        return self.date_updated or self.date_added
 
 
 class Tracker:
@@ -39,7 +44,8 @@ class Tracker:
     # --- operations ----------------------------------------------------
     def add(self, company: str, role: str, notes: str = "") -> Application:
         next_id = max((a.id for a in self.applications), default=0) + 1
-        app = Application(id=next_id, company=company, role=role, notes=notes)
+        today = date.today().isoformat()
+        app = Application(id=next_id, company=company, role=role, notes=notes, date_updated=today)
         self.applications.append(app)
         self._save()
         return app
@@ -55,6 +61,7 @@ class Tracker:
             raise ValueError(f"Status must be one of: {', '.join(STATUSES)}")
         app = self.get(app_id)
         app.status = status
+        app.date_updated = date.today().isoformat()
         self._save()
         return app
 
